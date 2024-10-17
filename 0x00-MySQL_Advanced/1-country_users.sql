@@ -1,5 +1,6 @@
+-- creates a table users
 CREATE TABLe
-IF NOT EXISTS `users`
+IF NOT EXISTS users
 (
      id INT NOT NULL AUTO_INCREMENT,
     email VARCHAR
