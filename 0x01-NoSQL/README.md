@@ -8,7 +8,7 @@
 
 - [NoSQL Databases Explained](https://example.com/nosql-databases-explained)
 - [What is NoSQL?](https://example.com/what-is-nosql)
-- [MongoDB with Python Crash Course - Tutorial for Beginners](https://example.com/mongodb-python-crash-course)
+- [MongoDB with Python Crash Course - Tutorial for Beginners](https://www.youtube.com/watch?v=E-1xI85Zog8)
 - [MongoDB Tutorial 2: Insert, Update, Remove, Query](https://example.com/mongodb-tutorial-2)
 - [Aggregation](https://example.com/aggregation)
 - [Introduction to MongoDB and Python](https://example.com/intro-mongodb-python)
