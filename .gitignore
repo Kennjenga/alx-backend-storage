@@ -8,3 +8,6 @@ menv
 
 # dump files
 */dump
+
+# node modules
+*/node_modules
