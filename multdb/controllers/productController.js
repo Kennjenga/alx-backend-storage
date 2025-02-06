@@ -1,14 +1,14 @@
+// controllers/productController.js
+const Product = require("../models/product");
+
 class ProductController {
-  constructor(redisClient, mysqlConnection) {
+  constructor(redisClient) {
     this.redisClient = redisClient;
-    this.mysqlConnection = mysqlConnection;
   }
 
   async getAllProducts(req, res) {
     try {
-      const [products] = await this.mysqlConnection.execute(
-        "SELECT * FROM products"
-      );
+      const products = await Product.find();
       res.json(products);
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -19,27 +19,14 @@ class ProductController {
     try {
       const { id } = req.params;
 
-      // Check Redis cache
       const cachedProduct = await this.redisClient.get(`product:${id}`);
-      if (cachedProduct) {
-        return res.json(JSON.parse(cachedProduct));
-      }
+      if (cachedProduct) return res.json(JSON.parse(cachedProduct));
 
-      // Get from MySQL
-      const [products] = await this.mysqlConnection.execute(
-        "SELECT * FROM products WHERE id = ?",
-        [id]
-      );
-
-      if (products.length === 0) {
+      const product = await Product.findById(id);
+      if (!product)
         return res.status(404).json({ message: "Product not found" });
-      }
 
-      const product = products[0];
-
-      // Cache in Redis
       await this.redisClient.set(`product:${id}`, JSON.stringify(product));
-
       res.json(product);
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -48,20 +35,8 @@ class ProductController {
 
   async createProduct(req, res) {
     try {
-      const { name, description, price, category, stock } = req.body;
-      const id = Date.now().toString(); // Simple ID generation
-
-      const [result] = await this.mysqlConnection.execute(
-        "INSERT INTO products (id, name, description, price, category, stock) VALUES (?, ?, ?, ?, ?, ?)",
-        [id, name, description, price, category, stock]
-      );
-
-      const [newProduct] = await this.mysqlConnection.execute(
-        "SELECT * FROM products WHERE id = ?",
-        [id]
-      );
-
-      res.status(201).json(newProduct[0]);
+      const product = await Product.create(req.body);
+      res.status(201).json(product);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -70,26 +45,15 @@ class ProductController {
   async updateProduct(req, res) {
     try {
       const { id } = req.params;
-      const { name, description, price, category, stock } = req.body;
+      const product = await Product.findByIdAndUpdate(id, req.body, {
+        new: true,
+      });
 
-      const [result] = await this.mysqlConnection.execute(
-        "UPDATE products SET name = ?, description = ?, price = ?, category = ?, stock = ? WHERE id = ?",
-        [name, description, price, category, stock, id]
-      );
-
-      if (result.affectedRows === 0) {
+      if (!product)
         return res.status(404).json({ message: "Product not found" });
-      }
 
-      // Invalidate Redis cache
       await this.redisClient.del(`product:${id}`);
-
-      const [updatedProduct] = await this.mysqlConnection.execute(
-        "SELECT * FROM products WHERE id = ?",
-        [id]
-      );
-
-      res.json(updatedProduct[0]);
+      res.json(product);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -98,19 +62,12 @@ class ProductController {
   async deleteProduct(req, res) {
     try {
       const { id } = req.params;
+      const product = await Product.findByIdAndDelete(id);
 
-      const [result] = await this.mysqlConnection.execute(
-        "DELETE FROM products WHERE id = ?",
-        [id]
-      );
-
-      if (result.affectedRows === 0) {
+      if (!product)
         return res.status(404).json({ message: "Product not found" });
-      }
 
-      // Invalidate Redis cache
       await this.redisClient.del(`product:${id}`);
-
       res.json({ message: "Product deleted successfully" });
     } catch (error) {
       res.status(500).json({ error: error.message });

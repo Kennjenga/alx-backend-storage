@@ -1,16 +1,19 @@
+const mongoose = require("mongoose");
 require("dotenv").config();
 
-// config/database.js
-const mysqlConfig = {
-  host: "localhost",
-  user: "root",
-  password: process.env.MYSQL_PASSWORD,
-  database: "ecommerce",
-  port: 3306,
-  // Optional but recommended settings
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
+//  'mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>?retryWrites=true&w=majority'
+const connectDb = async () => {
+  try {
+    const connect = await mongoose.connect(process.env.CONNECTION_STRING);
+    console.log(
+      "Database connected: ",
+      connect.connection.host,
+      connect.connection.name
+    );
+  } catch (err) {
+    console.log(err);
+    process.exit(1);
+  }
 };
 
-module.exports = { mysqlConfig };
+module.exports = connectDb;

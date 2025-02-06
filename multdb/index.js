@@ -1,8 +1,7 @@
 // server.js
 const express = require("express");
-const mysql = require("mysql2/promise");
 const redis = require("redis");
-const { mysqlConfig } = require("./config/database");
+const connectDb = require("./config/database");
 const { redisConfig } = require("./config/redis");
 
 const app = express();
@@ -12,47 +11,40 @@ app.use(express.json());
 
 async function initializeDatabases() {
   try {
-    const mysqlConnection = await mysql.createConnection(mysqlConfig);
-    console.log("MySQL connected successfully");
-
+    await connectDb();
     const redisClient = redis.createClient(redisConfig);
     await redisClient.connect();
     console.log("Redis connected successfully");
-
-    return { mysqlConnection, redisClient };
+    return { redisClient };
   } catch (error) {
     console.error("Database connection error:", error);
     process.exit(1);
   }
 }
 
-async function startServer() {
-  const { mysqlConnection, redisClient } = await initializeDatabases();
+app.get("/", function (req, res) {
+  res.send("Welcome to the Product API");
+});
 
-  const productRoutes = require("./routes/products")(
-    redisClient,
-    mysqlConnection
-  );
-  // const orderRoutes = require("./routes/orders")(redisClient, mysqlConnection);
+async function startServer() {
+  const { redisClient } = await initializeDatabases();
+
+  const productRoutes = require("./routes/products")(redisClient);
+  // const orderRoutes = require("./routes/orders")(redisClient);
 
   app.use("/api/products", productRoutes);
   // app.use("/api/orders", orderRoutes);
 
   app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({
-      status: "error",
-      message: err.message,
-    });
+    res.status(500).json({ status: "error", message: err.message });
   });
 
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
   process.on("SIGINT", async () => {
     try {
-      await mysqlConnection.end();
+      await mongoose.connection.close();
       await redisClient.quit();
       console.log("Database connections closed");
       process.exit(0);

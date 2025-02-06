@@ -3,8 +3,8 @@ const express = require("express");
 const router = express.Router();
 const ProductController = require("../controllers/productController");
 
-module.exports = (redisClient, mysqlConnection) => {
-  const productController = new ProductController(redisClient, mysqlConnection);
+module.exports = (redisClient, db) => {
+  const productController = new ProductController(redisClient, db);
 
   router.get("/", productController.getAllProducts.bind(productController));
   router.get("/:id", productController.getProduct.bind(productController));
