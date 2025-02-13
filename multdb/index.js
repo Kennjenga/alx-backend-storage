@@ -4,9 +4,11 @@ const mysql = require("mysql2/promise");
 const redis = require("redis");
 const { mysqlConfig } = require("./config/database");
 const { redisConfig } = require("./config/redis");
+const swaggerUi = require("swagger-ui-express");
+const swaggerFile = require("./config/swagger-output.json");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8001;
 
 app.use(express.json());
 
@@ -26,6 +28,10 @@ async function initializeDatabases() {
   }
 }
 
+app.get("/", function (req, res) {
+  res.send("Hello, World!");
+});
+
 async function startServer() {
   const { mysqlConnection, redisClient } = await initializeDatabases();
 
@@ -33,10 +39,12 @@ async function startServer() {
     redisClient,
     mysqlConnection
   );
-  // const orderRoutes = require("./routes/orders")(redisClient, mysqlConnection);
+  const orderRoutes = require("./routes/orders")(redisClient, mysqlConnection);
 
   app.use("/api/products", productRoutes);
-  // app.use("/api/orders", orderRoutes);
+  app.use("/api/orders", orderRoutes);
+
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
   app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -48,6 +56,9 @@ async function startServer() {
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(
+      `Swagger documentation available at http://localhost:${PORT}/api-docs`
+    );
   });
 
   process.on("SIGINT", async () => {

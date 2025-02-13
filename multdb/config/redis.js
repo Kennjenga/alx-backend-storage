@@ -1,6 +1,6 @@
 // config/redis.js
 const redisConfig = {
-  url: "redis://localhost:6379",
+  url: process.env.REDIS_URL,
   // Optional configuration
   socket: {
     connectTimeout: 10000,
